@@ -1,0 +1,115 @@
+name: "eigenhelm"
+description: "Evaluate code quality against aesthetic metrics trained on elite corpora"
+author: "metacogdev"
+
+branding:
+  icon: "award"
+  color: "purple"
+
+inputs:
+  paths:
+    description: "Files or directories to evaluate (space-separated)"
+    required: false
+    default: "."
+  model:
+    description: "Path to .npz model file (uses bundled polyglot model if omitted)"
+    required: false
+  diff:
+    description: "Git revision range to evaluate only changed files (e.g. origin/main...HEAD)"
+    required: false
+  format:
+    description: "Output format: human, json, or sarif"
+    required: false
+    default: "human"
+  classify:
+    description: "Show accept/marginal/reject labels"
+    required: false
+    default: "true"
+  strict:
+    description: "Treat marginal as reject (exit code 1)"
+    required: false
+    default: "false"
+  lenient:
+    description: "Treat marginal as accept (exit code 0)"
+    required: false
+    default: "false"
+  version:
+    description: "eigenhelm version to install (default: latest)"
+    required: false
+  sarif-upload:
+    description: "Upload SARIF results to GitHub Code Scanning"
+    required: false
+    default: "false"
+
+outputs:
+  sarif-file:
+    description: "Path to SARIF output file (when format=sarif or sarif-upload=true)"
+    value: ${{ steps.evaluate.outputs.sarif-file }}
+  exit-code:
+    description: "Exit code from eigenhelm evaluate"
+    value: ${{ steps.evaluate.outputs.exit-code }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Install eigenhelm
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          uv tool install "eigenhelm==${{ inputs.version }}"
+        else
+          uv tool install eigenhelm
+        fi
+
+    - name: Run evaluation
+      id: evaluate
+      shell: bash
+      run: |
+        ARGS=""
+
+        if [ -n "${{ inputs.model }}" ]; then
+          ARGS="${ARGS} --model ${{ inputs.model }}"
+        fi
+
+        if [ -n "${{ inputs.diff }}" ]; then
+          ARGS="${ARGS} --diff ${{ inputs.diff }}"
+        fi
+
+        ARGS="${ARGS} --format ${{ inputs.format }}"
+
+        if [ "${{ inputs.classify }}" = "true" ]; then
+          ARGS="${ARGS} --classify"
+        fi
+
+        if [ "${{ inputs.strict }}" = "true" ]; then
+          ARGS="${ARGS} --strict"
+        fi
+
+        if [ "${{ inputs.lenient }}" = "true" ]; then
+          ARGS="${ARGS} --lenient"
+        fi
+
+        # If sarif-upload is requested, run a second pass with sarif output
+        if [ "${{ inputs.sarif-upload }}" = "true" ] && [ "${{ inputs.format }}" != "sarif" ]; then
+          eh evaluate ${ARGS} ${{ inputs.paths }} || true
+          SARIF_FILE="${RUNNER_TEMP}/eigenhelm-results.sarif"
+          eh evaluate ${ARGS/ --format ${{ inputs.format }}/ --format sarif} ${{ inputs.paths }} > "${SARIF_FILE}" 2>/dev/null || true
+          echo "sarif-file=${SARIF_FILE}" >> "$GITHUB_OUTPUT"
+        elif [ "${{ inputs.format }}" = "sarif" ]; then
+          SARIF_FILE="${RUNNER_TEMP}/eigenhelm-results.sarif"
+          eh evaluate ${ARGS} ${{ inputs.paths }} | tee "${SARIF_FILE}"
+          echo "sarif-file=${SARIF_FILE}" >> "$GITHUB_OUTPUT"
+        else
+          eh evaluate ${ARGS} ${{ inputs.paths }}
+        fi
+
+        echo "exit-code=$?" >> "$GITHUB_OUTPUT"
+
+    - name: Upload SARIF to GitHub
+      if: inputs.sarif-upload == 'true' && steps.evaluate.outputs.sarif-file != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.evaluate.outputs.sarif-file }}

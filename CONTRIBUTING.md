@@ -122,4 +122,4 @@ Do **not** open a public issue for security vulnerabilities. Email the maintaine
 If you want to use eigenhelm in a proprietary product or SaaS offering without complying with
 AGPL-3.0 requirements, a commercial license is available.
 
-Contact us at **licensing@eigenhelm.dev** to discuss terms.
+Contact us at **licensing@eigenhelm.sh** to discuss terms.
