@@ -169,7 +169,6 @@ class DynamicHelm:
         """Tier A: Evaluate code and return accept/warn/reject decision."""
         from eigenhelm.attribution import compute_attribution
         from eigenhelm.declarations import analyze_declarations
-        from eigenhelm.output.percentile import DimensionContribution, compute_quality_percentile
 
         # 020: Declaration analysis for directive override and dampening
         decl_analysis = analyze_declarations(request.source, request.language)
@@ -184,23 +183,10 @@ class DynamicHelm:
         decision = self._map_decision(score)
 
         # 016: Compute quality percentile from model's score distribution
-        distribution = (
-            self._eigenspace.score_distribution
-            if self._eigenspace is not None
-            else None
-        )
-        pct_result = compute_quality_percentile(score, distribution)
+        pct_result = self._compute_percentile(score)
 
         # 016: Extract per-dimension contributions from AestheticScore
-        contributions = tuple(
-            DimensionContribution(
-                dimension=dim,
-                normalized_value=critique.score.normalized_values.get(dim, 0.0),
-                weight=critique.score.weights.get(dim, 0.0),
-                weighted_contribution=critique.score.contributions.get(dim, 0.0),
-            )
-            for dim in critique.score.weights
-        )
+        contributions = self._compute_contributions(critique)
 
         # 017: Compute score attribution
         feature_vector = vectors[0] if vectors else None
@@ -229,6 +215,31 @@ class DynamicHelm:
             contributions=contributions,
             attribution=attribution,
             declaration_ratio=decl_analysis.ratio if declaration_dominant else None,
+        )
+
+    def _compute_percentile(self, score: float):
+        """Compute quality percentile from model's score distribution (016)."""
+        from eigenhelm.output.percentile import compute_quality_percentile
+
+        distribution = (
+            self._eigenspace.score_distribution
+            if self._eigenspace is not None
+            else None
+        )
+        return compute_quality_percentile(score, distribution)
+
+    def _compute_contributions(self, critique: Critique) -> tuple:
+        """Extract per-dimension contributions from AestheticScore (016)."""
+        from eigenhelm.output.percentile import DimensionContribution
+
+        return tuple(
+            DimensionContribution(
+                dimension=dim,
+                normalized_value=critique.score.normalized_values.get(dim, 0.0),
+                weight=critique.score.weights.get(dim, 0.0),
+                weighted_contribution=critique.score.contributions.get(dim, 0.0),
+            )
+            for dim in critique.score.weights
         )
 
     def _map_decision(self, score: float) -> str:

@@ -148,6 +148,102 @@ def _apply_thresholds(response: EvaluationResponse, thresholds) -> EvaluationRes
     return replace(response, decision=new_decision)
 
 
+def _load_project_config() -> tuple[object | None, Path | None, bool, str]:
+    """Find and load project config, determine strict mode base, and config hash.
+
+    Returns:
+        (config, config_path, config_strict, config_hash) where config_strict
+        is True only if the config file sets strict mode.
+    """
+    config = None
+    config_path: Path | None = None
+    try:
+        config_path = find_config(Path.cwd())
+        if config_path is not None:
+            config = load_config(config_path)
+    except Exception:
+        pass
+
+    config_strict = config is not None and config.strict
+    config_hash = _hash_config(config_path)
+    return config, config_path, config_strict, config_hash
+
+
+def _evaluate_staged_file(
+    file_path: Path,
+    helm: DynamicHelm,
+    cache: EvaluationCache,
+    config: object | None,
+    lang_overrides: dict[str, str],
+    collect_scorecard: bool,
+) -> tuple[str | None, float | None, bool, tuple[str, object] | None]:
+    """Evaluate a single staged file with cache check.
+
+    Returns:
+        (decision, score, was_evaluated, scorecard_entry) where:
+        - decision is None if the file was skipped
+        - was_evaluated is True only when the file was freshly evaluated (not cached)
+        - scorecard_entry is (path_str, critique) if collect_scorecard else None
+    """
+    try:
+        content = file_path.read_bytes()
+    except OSError:
+        return None, None, False, None
+
+    content_hash = _hash_file(content)
+    path_str = str(file_path)
+
+    # Check cache
+    cached = cache.get(path_str, content_hash)
+    if cached is not None:
+        print(f"  [cache] {file_path}: {cached.decision} (score={cached.score:.2f})")
+        return cached.decision, cached.score, False, None
+
+    # Resolve language
+    lang = (
+        lang_overrides.get(file_path.suffix)
+        or _EXT_TO_LANG.get(file_path.suffix)
+    )
+    if lang is None:
+        return None, None, False, None
+
+    try:
+        source = content.decode("utf-8")
+    except UnicodeDecodeError:
+        print(
+            f"  WARNING: Skipping binary file {file_path}",
+            file=sys.stderr,
+        )
+        return None, None, False, None
+
+    resp = helm.evaluate(
+        EvaluationRequest(
+            source=source, language=lang, file_path=path_str
+        )
+    )
+
+    # Apply per-file thresholds from config
+    if config is not None:
+        thresholds = config.thresholds_for(path_str)
+        resp = _apply_thresholds(resp, thresholds)
+
+    decision = resp.decision
+    score = resp.score
+    print(f"  {file_path}: {decision} (score={score:.2f})")
+
+    scorecard_entry = (path_str, resp.critique) if collect_scorecard else None
+
+    cache.set(
+        path_str,
+        CacheEntry(
+            content_hash=content_hash,
+            decision=decision,
+            score=score,
+        ),
+    )
+    return decision, score, True, scorecard_entry
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point for eigenhelm-check pre-commit hook.
 
@@ -182,20 +278,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv or [])
 
     try:
-        # Load config (best-effort)
-        config = None
-        config_path: Path | None = None
-        try:
-            config_path = find_config(Path.cwd())
-            if config_path is not None:
-                config = load_config(config_path)
-        except Exception:
-            pass
-
-        strict = args.strict or (
-            config is not None and config.strict and not args.lenient
-        )
-        config_hash = _hash_config(config_path)
+        config, _config_path, config_strict, config_hash = _load_project_config()
+        strict = args.strict or (config_strict and not args.lenient)
 
         # Load cache
         cache = EvaluationCache(_CACHE_FILE, config_hash)
@@ -225,65 +309,20 @@ def main(argv: list[str] | None = None) -> int:
         scorecard_critiques: list[tuple[str, object]] = []
 
         for file_path in staged:
-            try:
-                content = file_path.read_bytes()
-            except OSError:
+            decision, _score, was_evaluated, scorecard_entry = _evaluate_staged_file(
+                file_path, helm, cache, config, lang_overrides, args.scorecard
+            )
+
+            if decision is None:
                 continue
 
-            content_hash = _hash_file(content)
-            path_str = str(file_path)
-
-            # Check cache
-            cached = cache.get(path_str, content_hash)
-            if cached is not None:
-                cached_hits += 1
-                decision = cached.decision
-                score = cached.score
-                print(f"  [cache] {file_path}: {decision} (score={score:.2f})")
-            else:
-                # Evaluate
-                lang = (
-                    lang_overrides.get(file_path.suffix)
-                    or _EXT_TO_LANG.get(file_path.suffix)
-                )
-                if lang is None:
-                    continue
-                try:
-                    source = content.decode("utf-8")
-                except UnicodeDecodeError:
-                    print(
-                        f"  WARNING: Skipping binary file {file_path}",
-                        file=sys.stderr,
-                    )
-                    continue
-
-                resp = helm.evaluate(
-                    EvaluationRequest(
-                        source=source, language=lang, file_path=path_str
-                    )
-                )
-
-                # Apply per-file thresholds from config
-                if config is not None:
-                    thresholds = config.thresholds_for(path_str)
-                    resp = _apply_thresholds(resp, thresholds)
-
-                decision = resp.decision
-                score = resp.score
-                print(f"  {file_path}: {decision} (score={score:.2f})")
-
-                if args.scorecard:
-                    scorecard_critiques.append((path_str, resp.critique))
-
-                cache.set(
-                    path_str,
-                    CacheEntry(
-                        content_hash=content_hash,
-                        decision=decision,
-                        score=score,
-                    ),
-                )
+            if was_evaluated:
                 evaluated += 1
+            else:
+                cached_hits += 1
+
+            if scorecard_entry is not None:
+                scorecard_critiques.append(scorecard_entry)
 
             effective_decision = decision
             if strict and effective_decision == "warn":

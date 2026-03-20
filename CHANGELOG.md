@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.6.0](https://github.com/matchdav/eigenhelm/compare/v0.5.0...v0.6.0) (2026-03-20)
+
+
+### Features
+
+* enhance pre-commit hook with project config loading and evaluation logic ([f225e2c](https://github.com/matchdav/eigenhelm/commit/f225e2c3b6cc9ebe0a85e9aed3202f8458d282ac))
+
+
+### Bug Fixes
+
+* pipe output with mkdirp for non-existent targets ([eda740b](https://github.com/matchdav/eigenhelm/commit/eda740bfb0449172916d2423aaa23e2b47794227))
+
+
+### Documentation
+
+* consistency sweep ([94a7bd3](https://github.com/matchdav/eigenhelm/commit/94a7bd30e7a4deea12906784b4bef5b4e5b74f54))
+
 ## [0.5.0](https://github.com/matchdav/eigenhelm/compare/v0.4.0...v0.5.0) (2026-03-20)
 
 

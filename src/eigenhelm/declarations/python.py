@@ -183,7 +183,7 @@ def _body_is_field_only(body) -> bool:
             continue
         if child.type == "expression_statement":
             inner = child.children[0] if child.children else None
-            if inner is not None and inner.type == "ellipsis":
+            if inner is not None and inner.type in ("ellipsis", "string"):
                 continue
         return False
     return True
@@ -251,7 +251,7 @@ def _is_stub_method(fn_node) -> bool:
 
 
 def _is_ignorable(node) -> bool:
-    return node.type in ("comment", "newline", "NEWLINE", "INDENT", "DEDENT")
+    return node.type in ("comment", "newline", "NEWLINE", "INDENT", "DEDENT", "string")
 
 
 # ---------------------------------------------------------------------------

@@ -1,21 +1,21 @@
 # Installation
 
-## uv (recommended)
+## pip
 
 ```bash
-uv tool install eigenhelm
+pip install eigenhelm
 ```
 
 With the HTTP server:
 
 ```bash
-uv tool install "eigenhelm[serve]"
+pip install "eigenhelm[serve]"
 ```
 
-## pip
+## uv (no venv required)
 
 ```bash
-pip install eigenhelm
+uv tool install eigenhelm
 ```
 
 ## From source

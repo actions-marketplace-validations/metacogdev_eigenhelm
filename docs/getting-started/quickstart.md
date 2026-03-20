@@ -99,8 +99,25 @@ eh init
 
 Creates `.eigenhelm.toml` with sensible defaults. See [Configuration](configuration.md) for details.
 
+## Set up for AI agents
+
+Install the agent skill to give your coding agent the correct workflow:
+
+```bash
+# Via skills registry
+npx skills add metacogdev/skills
+
+# Or via eigenhelm CLI
+eh skill --install
+```
+
+The skill teaches agents to evaluate after tests pass, apply obvious fixes for rejects, and stop after two passes — preventing the over-iteration trap where agents break working code to chase a score.
+
+[Full agent integration guide](../integrations/agent-skills.md)
+
 ## Next steps
 
 - [Understand the scoring dimensions](../concepts/dimensions.md)
 - [Configure thresholds and models](configuration.md)
+- [Set up AI agent integration](../integrations/agent-skills.md)
 - [Add to your CI pipeline](../integrations/github-action.md)

@@ -30,6 +30,9 @@ def init(force: bool, output: Path | None) -> None:
     eigenhelm_dir = target_dir / ".eigenhelm"
     gitignore_path = target_dir / ".gitignore"
 
+    if not target_dir.exists():
+        target_dir.mkdir(parents=True)
+
     if config_path.exists() and not force:
         click.echo(
             f"ERROR: {config_path} already exists. Use --force to overwrite.",

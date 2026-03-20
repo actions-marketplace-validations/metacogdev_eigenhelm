@@ -88,6 +88,7 @@ nav:
       - harness: cli/harness.md
       - corpus: cli/corpus.md
       - init: cli/init.md
+      - skill: cli/skill.md
   - Integrations:
       - GitHub Action: integrations/github-action.md
       - Pre-commit Hook: integrations/pre-commit.md

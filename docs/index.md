@@ -89,7 +89,7 @@ eigenhelm extracts a 69-dimensional structural fingerprint from each file using 
     ```yaml
     repos:
       - repo: https://github.com/metacogdev/eigenhelm
-        rev: v0.4.0
+        rev: v0.5.0
         hooks:
           - id: eigenhelm-check
     ```
@@ -106,7 +106,8 @@ eigenhelm extracts a 69-dimensional structural fingerprint from each file using 
 === "Agent skill"
 
     ```bash
-    npx skills add metacogdev/skills --skill eigenhelm
+    npx skills add metacogdev/skills
+    # or: eh skill --install
     ```
 
 ---
