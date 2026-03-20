@@ -23,6 +23,8 @@ from eigenhelm.serve.models import (
     EvaluateRequest,
     EvaluateResponse,
     FeatureContributionOut,
+    RegionSpanOut,
+    RegionSummaryOut,
     SourceLocationOut,
     ViolationOut,
 )
@@ -56,6 +58,24 @@ def _map_response(
     # 017: Map attribution
     attribution_out = _map_attribution(helm_response.attribution)
 
+    # 019: Map region decomposition
+    regions_out = None
+    if helm_response.regions:
+        regions_out = [
+            RegionSummaryOut(
+                label=r.label.value,
+                spans=[
+                    RegionSpanOut(start_line=s.start_line, end_line=s.end_line)
+                    for s in r.spans
+                ],
+                total_lines=r.total_lines,
+                score=r.score,
+                decision=r.decision,
+                percentile=r.percentile,
+            )
+            for r in helm_response.regions
+        ]
+
     return EvaluateResponse(
         decision=helm_response.decision,
         score=helm_response.score,
@@ -67,6 +87,8 @@ def _map_response(
         percentile_available=helm_response.percentile_available,
         contributions=contributions,
         attribution=attribution_out,
+        regions=regions_out,
+        declaration_ratio=helm_response.declaration_ratio,
     )
 
 
@@ -172,6 +194,30 @@ def _compute_summary(results: list[EvaluateResponse]) -> BatchSummary:
     )
 
 
+def _attach_regions_api(
+    result: HelmResponse, source: str, language: str, helm: DynamicHelm
+) -> HelmResponse:
+    """Attach region decomposition to an API evaluation result."""
+    from dataclasses import replace
+
+    from eigenhelm.regions import derive_spans, detect_test_boundaries
+
+    boundaries = detect_test_boundaries(source, language)
+    if not boundaries:
+        return result
+
+    total_lines = len(source.splitlines())
+    spans = derive_spans(boundaries, total_lines)
+    if not spans:
+        return result
+
+    regions = helm.score_regions(source, language, spans)
+    if not regions:
+        return result
+
+    return replace(result, regions=regions)
+
+
 @router.post("/evaluate", response_model=EvaluateResponse)
 def evaluate_single(payload: EvaluateRequest, request: Request) -> EvaluateResponse:
     """Evaluate a single code block through the full Stage 1→2→3 pipeline."""
@@ -185,6 +231,7 @@ def evaluate_single(payload: EvaluateRequest, request: Request) -> EvaluateRespo
             directive_threshold=payload.directive_threshold,
         )
     )
+    result = _attach_regions_api(result, payload.source, payload.language, helm)
     return _map_response(result, file_path=payload.file_path)
 
 
@@ -216,6 +263,7 @@ def evaluate_batch(
                 directive_threshold=entry.directive_threshold,
             )
         )
+        result = _attach_regions_api(result, entry.source, entry.language, helm)
         results.append(_map_response(result, file_path=entry.file_path))
 
     return BatchResponse(results=results, summary=_compute_summary(results))

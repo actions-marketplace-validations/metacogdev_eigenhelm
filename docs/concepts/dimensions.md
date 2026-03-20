@@ -29,14 +29,14 @@ Measures how well the code aligns with the principal directions of quality varia
 
 **Weight: 0.15** | Source: Shannon entropy of byte stream
 
-Measures the information density of the source code. Well-written code tends to have moderate entropy — not too repetitive (low entropy) and not too noisy (high entropy).
+Measures the information density of the source code's byte stream. The normalized score is `1.0 - (entropy / 8.0)`, where 8.0 bits is the theoretical maximum for byte-level entropy. Lower entropy (more repetitive code) produces a higher score (worse).
 
-The normalized penalty is `1.0 - (entropy / 8.0)`, so lower entropy (more repetitive) scores worse.
+This is a monotonic penalty — only low entropy is penalized. High-entropy code scores well on this dimension.
 
-**What drives poor entropy:**
+**What drives poor entropy scores:**
 
-- Highly repetitive code (copy-pasted blocks)
-- Extremely terse or obfuscated code
+- Highly repetitive code (copy-pasted blocks, boilerplate)
+- Files with large amounts of duplicated structure
 
 ## Compression structure
 
@@ -62,6 +62,36 @@ Measures how similar the code is to the nearest high-quality exemplar stored in 
 $$NCD(x, y) = \frac{C(xy) - \min(C(x), C(y))}{\max(C(x), C(y))}$$
 
 Low NCD means the code structurally resembles a known good example. High NCD means it's unlike anything in the exemplar set.
+
+## Test code dilution
+
+When a source file contains both production code and inline test code (e.g., Rust `#[cfg(test)]` modules, Python `class TestFoo` blocks), the test code's structural signature can dominate the overall score. Repetitive test assertions, setup/teardown patterns, and boundary enumeration inflate manifold drift and compression metrics — masking genuine improvements to the production code.
+
+eigenhelm detects inline test code and reports a **region breakdown** alongside the overall score:
+
+```
+myfile.rs
+  decision: reject
+  score:    0.72 (p19)
+  regions:
+    production (lines 1-80):   0.55 (p55)
+    test (lines 81-270):       0.82 (p8)
+```
+
+The overall score is unchanged. The region breakdown shows that the production code (0.55) is substantially better than the overall score suggests — the test code (0.82) is pulling it up.
+
+**Best practices:**
+
+- In languages where tests are in separate files (Go `_test.go`, Java conventions), this isn't an issue — each file gets its own score.
+- For Rust and Python where inline tests are common, use the region breakdown to assess production code quality independently.
+- In CI, you can extract the production-only score from JSON output: `jq '.results[0].regions[] | select(.label == "production") | .score'`
+
+**Currently detected patterns:**
+
+| Language | Pattern |
+|----------|---------|
+| Rust | `#[cfg(test)] mod tests { ... }` |
+| Python | `class Test*`, top-level `def test_*` |
 
 ## Weight configurations
 

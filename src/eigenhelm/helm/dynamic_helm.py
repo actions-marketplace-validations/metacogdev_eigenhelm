@@ -112,7 +112,8 @@ class DynamicHelm:
     # ------------------------------------------------------------------
 
     def _evaluate_pipeline(
-        self, source: str, language: str, file_path: str | None = None
+        self, source: str, language: str, file_path: str | None = None,
+        declaration_dominant: bool = False,
     ) -> tuple[Critique, str | None, ProjectionResult | None, list[FeatureVector]]:
         """Run Stage 1→2→3 pipeline.
 
@@ -154,7 +155,8 @@ class DynamicHelm:
         # Stage 2: evaluate (pass feature vector for anti-pattern detection)
         fv_values = vectors[0].values if vectors else None
         critique = self._critic.evaluate(
-            source, language, projection=projection, feature_vector=fv_values
+            source, language, projection=projection, feature_vector=fv_values,
+            declaration_dominant=declaration_dominant,
         )
 
         return critique, warning, projection, vectors
@@ -166,10 +168,16 @@ class DynamicHelm:
     def evaluate(self, request: EvaluationRequest) -> EvaluationResponse:
         """Tier A: Evaluate code and return accept/warn/reject decision."""
         from eigenhelm.attribution import compute_attribution
+        from eigenhelm.declarations import analyze_declarations
         from eigenhelm.output.percentile import DimensionContribution, compute_quality_percentile
 
+        # 020: Declaration analysis for directive override and dampening
+        decl_analysis = analyze_declarations(request.source, request.language)
+        declaration_dominant = decl_analysis.is_dominant
+
         critique, warning, projection, vectors = self._evaluate_pipeline(
-            request.source, request.language, request.file_path
+            request.source, request.language, request.file_path,
+            declaration_dominant=declaration_dominant,
         )
 
         score = critique.score.value
@@ -207,6 +215,7 @@ class DynamicHelm:
             file_path=request.file_path,
             top_n=request.top_n,
             directive_threshold=request.directive_threshold,
+            declaration_dominant=declaration_dominant,
         )
 
         return EvaluationResponse(
@@ -219,6 +228,7 @@ class DynamicHelm:
             percentile_available=pct_result.available,
             contributions=contributions,
             attribution=attribution,
+            declaration_ratio=decl_analysis.ratio if declaration_dominant else None,
         )
 
     def _map_decision(self, score: float) -> str:
@@ -232,6 +242,85 @@ class DynamicHelm:
         if score > self._reject_threshold:
             return "reject"
         return "warn"
+
+    # ------------------------------------------------------------------
+    # 019: Region scoring
+    # ------------------------------------------------------------------
+
+    def score_regions(
+        self,
+        source: str,
+        language: str,
+        spans: tuple,  # tuple[RegionSpan, ...]
+    ) -> tuple:  # tuple[RegionSummary, ...]
+        """Score production and test regions independently.
+
+        Concatenates all spans sharing a label, evaluates the concatenated
+        source through the existing pipeline, and returns RegionSummary entries.
+
+        Args:
+            source: Full source code of the file.
+            language: Language identifier.
+            spans: RegionSpan entries from derive_spans().
+
+        Returns:
+            Tuple of RegionSummary entries (one per label present in spans).
+        """
+        from eigenhelm.output.percentile import compute_quality_percentile
+        from eigenhelm.regions.models import RegionSpan, RegionSummary, RegionType
+
+        source_lines = source.splitlines()
+
+        # Group spans by label
+        label_spans: dict[RegionType, list[RegionSpan]] = {}
+        for span in spans:
+            label_spans.setdefault(span.label, []).append(span)
+
+        summaries: list[RegionSummary] = []
+        distribution = (
+            self._eigenspace.score_distribution
+            if self._eigenspace is not None
+            else None
+        )
+
+        for label in (RegionType.PRODUCTION, RegionType.TEST):
+            region_spans = label_spans.get(label)
+            if not region_spans:
+                continue
+
+            # Concatenate source lines for this label
+            region_lines: list[str] = []
+            total_lines = 0
+            for span in region_spans:
+                chunk = source_lines[span.start_line - 1 : span.end_line]
+                region_lines.extend(chunk)
+                total_lines += span.end_line - span.start_line + 1
+
+            region_source = "\n".join(region_lines)
+            if not region_source.strip():
+                continue
+
+            # Evaluate through the critic pipeline
+            critique, _, _, _ = self._evaluate_pipeline(region_source, language)
+            score = critique.score.value
+            decision = self._map_decision(score)
+
+            pct_result = compute_quality_percentile(score, distribution)
+
+            summaries.append(
+                RegionSummary(
+                    label=label,
+                    spans=tuple(region_spans),
+                    total_lines=total_lines,
+                    score=score,
+                    decision=decision,
+                    percentile=pct_result.percentile if pct_result.available else None,
+                )
+            )
+
+        # Sort by first start_line per contract invariant 3
+        summaries.sort(key=lambda s: min(sp.start_line for sp in s.spans))
+        return tuple(summaries)
 
     # ------------------------------------------------------------------
     # Tier B: steer()

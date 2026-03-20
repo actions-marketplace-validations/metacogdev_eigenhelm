@@ -1,36 +1,39 @@
 # eigenhelm
 
-**A conscience for agents, not an agent.**
+**Catch low-quality AI-generated code before it lands.**
 
-eigenhelm is a language-agnostic code aesthetic evaluation sidecar. It scores code against mathematical aesthetic metrics derived from information theory, complexity science, and a PCA eigenspace trained on curated elite corpora.
+eigenhelm scores changed files in CI, gives coding agents concrete refactoring directives, and helps teams measure code quality over time — using information theory, not style rules.
 
-It runs alongside code-generating agents as a real-time quality signal — not to replace judgment, but to surface when generated code drifts from the structural patterns found in high-quality human-written code.
+```bash
+uv tool install eigenhelm
+eh evaluate --diff origin/main...HEAD --strict
+```
 
 ---
 
-## What it does
+## Why teams use eigenhelm
 
-eigenhelm evaluates source code across **five dimensions**:
+<div class="grid cards" markdown>
 
-| Dimension | What it measures |
-|-----------|-----------------|
-| **Manifold drift** | Distance from the learned code quality manifold |
-| **Manifold alignment** | Alignment with principal quality axes |
-| **Token entropy** | Information density of the token stream |
-| **Compression structure** | Structural regularity via Birkhoff aesthetic measure |
-| **NCD exemplar distance** | Similarity to nearest high-quality exemplar |
+- :material-shield-check: **Gate AI-generated PRs**
 
-Each file gets a score from 0.0 (ideal) to 1.0, a classification (accept / marginal / reject), and **actionable directives** pointing to specific code units that can be improved.
+    Score every changed file in CI. Block merges that fall below quality thresholds. Works with GitHub Actions, pre-commit, or any CI system.
+
+- :material-chart-line: **Measure quality drift**
+
+    Track scores across repos and over time. Compare models, prompts, or agents with a single statistical metric backed by Mann-Whitney U tests.
+
+- :material-robot: **Give agents a feedback loop**
+
+    Agents receive actionable directives — not just a score. `[high] extract_repeated_logic → MyClass (lines 15-42)` tells the agent exactly what to fix and where.
+
+</div>
 
 ---
 
 ## Quick example
 
 ```bash
-# Install
-uv tool install eigenhelm
-
-# Evaluate a file
 eh evaluate mymodule.py --classify
 ```
 
@@ -47,14 +50,72 @@ mymodule.py
     ncd_exemplar_distance    0.05  (weight: 0.10, normalized: 0.50)
 ```
 
+Each file gets a score from 0.0 (ideal) to 1.0, a classification (**accept** / **marginal** / **reject**), and **actionable directives** pointing to specific code units that can be improved.
+
 ---
 
-## Use cases
+## How it works
 
-- **CI gating** — fail PRs that introduce low-quality generated code
-- **Agent sidecar** — give coding agents a quality signal during generation
-- **Pre-commit hook** — catch quality regressions before they land
-- **Corpus benchmarking** — compare code quality across repositories or teams
+eigenhelm extracts a 69-dimensional structural fingerprint from each file using tree-sitter and projects it into a PCA eigenspace trained on curated elite corpora. The score combines five dimensions:
+
+| Dimension | What it measures |
+|-----------|-----------------|
+| **Manifold drift** | Distance from the learned code quality manifold |
+| **Manifold alignment** | Alignment with principal quality axes |
+| **Token entropy** | Information density of the byte stream |
+| **Compression structure** | Structural regularity (Birkhoff aesthetic measure) |
+| **NCD exemplar distance** | Similarity to nearest high-quality exemplar |
+
+[Learn more about the scoring model →](concepts/how-it-works.md)
+
+---
+
+## Integrate in 30 seconds
+
+=== "GitHub Action"
+
+    ```yaml
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: metacogdev/eigenhelm@v0
+      with:
+        diff: origin/main...HEAD
+        strict: "true"
+    ```
+
+=== "Pre-commit"
+
+    ```yaml
+    repos:
+      - repo: https://github.com/metacogdev/eigenhelm
+        rev: v0.4.0
+        hooks:
+          - id: eigenhelm-check
+    ```
+
+=== "HTTP API"
+
+    ```bash
+    eh serve --port 8080
+    curl -X POST http://localhost:8080/v1/evaluate \
+      -H "Content-Type: application/json" \
+      -d '{"source": "def add(a, b): return a + b", "language": "python"}'
+    ```
+
+=== "Agent skill"
+
+    ```bash
+    npx skills add metacogdev/skills --skill eigenhelm
+    ```
+
+---
+
+## Outputs
+
+- **Human** — readable terminal output with color and classification
+- **JSON** — machine-readable for scripting and dashboards
+- **[SARIF 2.1.0](https://sarifweb.azurewebsites.net/)** — upload to GitHub Code Scanning, VS Code, or any SARIF viewer
 
 ---
 
@@ -84,10 +145,12 @@ mymodule.py
 
 ## Supported languages
 
-Python, JavaScript, TypeScript, Go, Rust, Java, C, C++, Ruby, Swift.
+**Trained models**: Python, JavaScript, TypeScript, Go, Rust.
+
+**Parser support** (feature extraction available, bring your own model): Java, C, C++, Ruby, Kotlin.
 
 ---
 
 ## License
 
-eigenhelm is licensed under [AGPL-3.0](license.md). A [commercial license](mailto:licensing@eigenhelm.dev) is available for proprietary use.
+eigenhelm is licensed under [AGPL-3.0](license.md). A [commercial license](mailto:licensing@eigenhelm.sh) is available for proprietary use.

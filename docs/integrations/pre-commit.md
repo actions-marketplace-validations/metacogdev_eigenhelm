@@ -9,7 +9,7 @@ Add to your `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/metacogdev/eigenhelm
-    rev: v0.3.1
+    rev: v0.4.0
     hooks:
       - id: eigenhelm-check
 ```
@@ -30,8 +30,8 @@ The hook reads from `.eigenhelm.toml` in your project root. The most relevant se
 
 ```toml
 [thresholds]
-accept = 0.4
-reject = 0.6
+accept = 0.3
+reject = 0.7
 ```
 
 To make the hook stricter or more lenient, adjust these thresholds.

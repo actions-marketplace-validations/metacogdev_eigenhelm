@@ -28,9 +28,17 @@ uv sync --extra dev --extra serve
 
 ## Docker
 
+The Docker image runs the evaluation server by default:
+
 ```bash
 docker build -t eigenhelm .
-docker run --rm -v $(pwd):/code eigenhelm evaluate /code/myfile.py
+docker run -p 8080:8080 eigenhelm
+```
+
+To use the CLI via Docker, override the entrypoint:
+
+```bash
+docker run --rm --entrypoint eh -v $(pwd):/code eigenhelm evaluate /code/myfile.py
 ```
 
 ## Verify installation

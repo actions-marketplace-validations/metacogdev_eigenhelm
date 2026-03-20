@@ -33,16 +33,19 @@ name = "my-team-best"
 language = "python"
 class = "A"
 
-[[corpus.sources]]
-type = "local"
-path = "/path/to/curated/code"
+[[target]]
+name = "my-code"
+url = "https://github.com/my-org/my-repo"
+ref = "main"
+include = ["src/**/*.py"]
+description = "Our best production code"
 EOF
 
-# Sync the corpus
-eh corpus sync my-corpus.toml
+# Sync the corpus to a local directory
+eh corpus sync my-corpus.toml corpus/my-team-best
 
 # Train
-eh train --corpus corpus/my-team-best --language python --output models/my-model.npz
+eh train corpus/my-team-best --language python -o models/my-model.npz
 ```
 
 See [`eh train`](../cli/train.md) for the full training reference.
@@ -54,5 +57,5 @@ Each `.npz` model contains:
 - **PCA components**: The principal component matrix defining the quality manifold
 - **Corpus statistics**: Mean and standard deviation of the training feature vectors
 - **Calibration data**: Empirical score distribution (p25/p75 thresholds) from the training corpus
-- **Exemplar blobs**: Selected high-quality code samples for NCD comparison
-- **Metadata**: Language, corpus class, training date, vector count
+- **Exemplar refs**: Compressed code content from selected high-quality samples, used for NCD comparison
+- **Metadata**: Language, corpus class, training date, file count

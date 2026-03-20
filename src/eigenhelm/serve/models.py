@@ -103,6 +103,24 @@ class AttributionResultOut(BaseModel):
     vocabulary_version: str = "v1"
 
 
+class RegionSpanOut(BaseModel):
+    """Serializable line range for a region span (019)."""
+
+    start_line: int
+    end_line: int
+
+
+class RegionSummaryOut(BaseModel):
+    """Serializable region score decomposition (019)."""
+
+    label: str
+    spans: list[RegionSpanOut]
+    total_lines: int
+    score: float
+    decision: str
+    percentile: float | None = None
+
+
 class EvaluateResponse(BaseModel):
     """Output for POST /v1/evaluate."""
 
@@ -116,6 +134,8 @@ class EvaluateResponse(BaseModel):
     percentile_available: bool = False
     contributions: list[ContributionOut] = Field(default_factory=list)
     attribution: AttributionResultOut | None = None
+    regions: list[RegionSummaryOut] | None = None  # 019: test/production decomposition
+    declaration_ratio: float | None = None  # 020: set when declaration-dominant
 
 
 class FileEvalUnit(BaseModel):

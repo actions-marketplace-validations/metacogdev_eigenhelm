@@ -16,8 +16,8 @@ The harness evaluates whether one corpus of code is statistically distinguishabl
 
 ```bash
 eh harness --model models/lang-python.npz \
-  --corpus-a corpus/elite-python \
-  --corpus-b corpus/random-python
+  --before corpus/elite-python \
+  --after corpus/random-python
 ```
 
-Outputs: effect size (Cohen's d), U statistic, p-value, and a pass/fail determination.
+Outputs: mean/median scores per corpus, delta, Mann-Whitney U statistic, p-value, and significance at alpha=0.05. Use `--json` for machine-readable output.

@@ -41,20 +41,41 @@ def format_results_json(
             }
             for c in resp.contributions
         ]
-        result_dicts.append(
-            {
-                "decision": resp.decision,
-                "score": resp.score,
-                "structural_confidence": resp.structural_confidence,
-                "violations": violations,
-                "warning": resp.warning,
-                "file_path": str(path),
-                "percentile": resp.percentile,
-                "percentile_available": resp.percentile_available,
-                "contributions": contributions,
-                "attribution": attribution_to_dict(resp.attribution),
-            }
-        )
+        entry: dict = {
+            "decision": resp.decision,
+            "score": resp.score,
+            "structural_confidence": resp.structural_confidence,
+            "violations": violations,
+            "warning": resp.warning,
+            "file_path": str(path),
+            "percentile": resp.percentile,
+            "percentile_available": resp.percentile_available,
+            "contributions": contributions,
+            "attribution": attribution_to_dict(resp.attribution),
+        }
+
+        # 020: Declaration ratio (only for declaration-dominant files)
+        if resp.declaration_ratio is not None:
+            entry["declaration_ratio"] = resp.declaration_ratio
+
+        # 019: Region decomposition (only when test code detected)
+        if resp.regions:
+            entry["regions"] = [
+                {
+                    "label": r.label.value,
+                    "spans": [
+                        {"start_line": s.start_line, "end_line": s.end_line}
+                        for s in r.spans
+                    ],
+                    "total_lines": r.total_lines,
+                    "score": r.score,
+                    "decision": r.decision,
+                    "percentile": r.percentile,
+                }
+                for r in resp.regions
+            ]
+
+        result_dicts.append(entry)
 
     total = len(result_dicts)
     accepted = sum(1 for r in result_dicts if r["decision"] == "accept")

@@ -39,7 +39,8 @@ Source code
 
 eigenhelm parses source code using [tree-sitter](https://tree-sitter.github.io/) and extracts a **69-dimensional feature vector** per code unit:
 
-- **Halstead metrics** (5 dims): volume, difficulty, effort, vocabulary, length
+- **Halstead metrics** (3 dims): volume, difficulty, effort
+- **Cyclomatic metrics** (2 dims): complexity, density
 - **Weisfeiler-Leman hash bins** (64 dims): AST structural fingerprint capturing the distribution of subtree shapes
 
 The WL hash captures structural patterns — repetitive code, unusual nesting, idiomatic constructs — without depending on naming or formatting.
@@ -55,13 +56,13 @@ Low drift + high alignment = code that structurally resembles elite examples.
 
 ## Aesthetic scoring
 
-The final score combines five dimensions with learned weights:
+The final score combines five dimensions with preset weights (selected based on available data):
 
 | Dimension | Weight | Source |
 |-----------|--------|--------|
 | Manifold drift | 0.30 | PCA reconstruction error |
 | Manifold alignment | 0.30 | Projection onto quality axes |
-| Token entropy | 0.15 | Shannon entropy of token stream |
+| Token entropy | 0.15 | Shannon entropy of byte stream |
 | Compression structure | 0.15 | Birkhoff aesthetic measure (zlib) |
 | NCD exemplar distance | 0.10 | Compression distance to nearest exemplar |
 

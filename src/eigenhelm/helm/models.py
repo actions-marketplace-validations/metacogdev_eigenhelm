@@ -43,6 +43,8 @@ class EvaluationResponse:
     percentile_available: bool = False  # True when model has ScoreDistribution
     contributions: tuple[DimensionContribution, ...] = ()  # Per-dimension breakdown (016)
     attribution: AttributionResult | None = None  # Score attribution (017)
+    regions: tuple = ()  # 019: RegionSummary entries (empty when no test code detected)
+    declaration_ratio: float | None = None  # 020: set when file is declaration-dominant
 
 
 @dataclass

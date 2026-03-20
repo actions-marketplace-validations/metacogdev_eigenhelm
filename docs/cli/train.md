@@ -5,27 +5,35 @@ Train a new eigenspace model from a corpus directory.
 ## Usage
 
 ```bash
-eh train [OPTIONS]
+eh train CORPUS_DIR --language LANG -o OUTPUT [OPTIONS]
 ```
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `CORPUS_DIR` | Root directory of the code corpus (positional, required) |
 
 ## Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `--corpus PATH` | required | Path to synced corpus directory |
-| `--language LANG` | required | Target language |
-| `--output PATH` | required | Output .npz model path |
-| `--corpus-class {A,B,C}` | `A` | Corpus quality class |
-| `--min-files N` | 10 | Minimum files required to train |
+| `-o`, `--output PATH` | required | Output .npz model path |
+| `--language LANG` | required | Target language key (e.g., `python`, `go`, `multi`) |
+| `--corpus-class {A,B}` | `A` | Corpus quality class |
+| `--n-components INT` | _(auto)_ | Explicit number of principal components |
+| `--variance-threshold FLOAT` | `0.90` | Min cumulative explained variance for auto-select |
+| `--version TEXT` | _(package version)_ | Model version string |
+| `--force` | off | Overwrite existing output file |
 
 ## Example
 
 ```bash
 # Sync a corpus from manifest
-eh corpus sync corpora/my-corpus.toml
+eh corpus sync corpora/my-corpus.toml corpus/my-corpus
 
 # Train
-eh train --corpus corpus/my-corpus --language python --output models/my-model.npz
+eh train corpus/my-corpus --language python -o models/my-model.npz
 
 # Verify
 eh inspect models/my-model.npz
@@ -35,8 +43,5 @@ eh inspect models/my-model.npz
 
 | Class | Description |
 |-------|-------------|
-| A | Elite — curated, reviewed, exemplary code |
-| B | Good — production code from quality projects |
-| C | Mixed — broad collection, mixed quality |
-
-Higher-class corpora produce more discriminating models.
+| A | Single-language — curated, reviewed, exemplary code in one language |
+| B | Cross-language pattern — structural patterns across multiple languages |

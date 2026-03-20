@@ -164,6 +164,7 @@ class TestPrecommitMain:
         with (
             patch("eigenhelm.cli.precommit._get_staged_files", return_value=[f]),
             patch("eigenhelm.cli.precommit._CACHE_FILE", cache_path),
+            patch("eigenhelm.cli.precommit.find_config", return_value=None),
             patch("eigenhelm.cli.precommit.EvaluationCache.save"),
             patch("eigenhelm.helm.DynamicHelm.evaluate") as mock_eval,
         ):

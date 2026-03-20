@@ -13,8 +13,9 @@ eh serve [OPTIONS]
 | Option | Default | Description |
 |--------|---------|-------------|
 | `--model PATH` | _(bundled)_ | Path to .npz eigenspace model |
-| `--host HOST` | `127.0.0.1` | Bind address |
+| `--host HOST` | `0.0.0.0` | Bind address |
 | `--port PORT` | `8080` | Bind port |
+| `--timeout-graceful-shutdown INT` | `30` | Seconds to wait for in-flight requests on SIGTERM |
 
 ## Example
 

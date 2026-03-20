@@ -226,6 +226,7 @@ class AestheticCritic(IAestheticCritic):
         projection: ProjectionResult | None = None,
         top_n: int = 3,
         feature_vector: np.ndarray | None = None,
+        declaration_dominant: bool = False,
     ) -> Critique:
         """Evaluate source code and return a full structured Critique.
 
@@ -278,8 +279,19 @@ class AestheticCritic(IAestheticCritic):
         else:
             normalized["ncd_exemplar_distance"] = 0.0
 
+        # 020: Dampen drift and alignment for declaration-dominant files
+        if declaration_dominant:
+            normalized["manifold_drift"] *= 0.5
+            normalized["manifold_alignment"] *= 0.5
+
         weights = self._select_weights(projection)
         score = self._compute_score(normalized, weights, projection)
+
+        # 020: Clamp to accept threshold floor for declaration-dominant files
+        if declaration_dominant and score.value < self.marginal_threshold:
+            from dataclasses import replace as _replace
+
+            score = _replace(score, value=self.marginal_threshold)
 
         raw_values: dict[str, float] = {
             "manifold_drift": projection.l_drift if projection is not None else 0.0,

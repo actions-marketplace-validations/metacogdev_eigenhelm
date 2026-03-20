@@ -216,6 +216,27 @@ def build_sarif(
                 )
             result_entry["relatedLocations"] = related
 
+        # 020: Declaration ratio
+        if resp.declaration_ratio is not None:
+            result_entry.setdefault("properties", {})["declaration_ratio"] = resp.declaration_ratio
+
+        # 019: Attach region data as properties (not separate results)
+        if resp.regions:
+            result_entry.setdefault("properties", {})["regions"] = [
+                {
+                    "label": r.label.value,
+                    "spans": [
+                        {"startLine": s.start_line, "endLine": s.end_line}
+                        for s in r.spans
+                    ],
+                    "totalLines": r.total_lines,
+                    "score": r.score,
+                    "decision": r.decision,
+                    "percentile": r.percentile,
+                }
+                for r in resp.regions
+            ]
+
         sarif_results.append(result_entry)
 
         # 017: Generate additional SARIF results for each directive

@@ -23,6 +23,7 @@ def _make_mock_result(path="file.py", decision="accept", score=0.2):
     resp.percentile_available = True
     resp.contributions = ()
     resp.attribution = None
+    resp.declaration_ratio = None
     return (path, resp)
 
 

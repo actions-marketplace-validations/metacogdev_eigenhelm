@@ -21,4 +21,4 @@ eh init [OPTIONS]
 eh init
 ```
 
-Creates `.eigenhelm.toml` and `.eigenhelm/` cache directory. Adds `.eigenhelm/` to `.gitignore` if present.
+Creates `.eigenhelm.toml` and `.eigenhelm/` cache directory. Adds `.eigenhelm/` to `.gitignore` (creates the file if it doesn't exist).

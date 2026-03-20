@@ -48,13 +48,26 @@ myfile.py
 
 **Decision**:
 
-| Decision | Default threshold | Meaning |
-|----------|------------------|---------|
-| accept | score ≤ 0.4 | Code quality is good |
-| marginal | 0.4 < score < 0.6 | Review directives, improve if straightforward |
+| Decision | Hardcoded default | Meaning |
+|----------|-------------------|---------|
+| accept | score < 0.4 | Code quality is good |
+| marginal | 0.4 ≤ score < 0.6 | Review directives, improve if straightforward |
 | reject | score ≥ 0.6 | Quality issues need attention |
 
+!!! note
+    `eh init` generates `.eigenhelm.toml` with thresholds of 0.3/0.7. These override the hardcoded defaults above. Model-calibrated thresholds (from training corpus percentiles) also override when available.
+
 **Directives**: Actionable suggestions with severity (`[high]`, `[medium]`, `[low]`) pointing to specific code locations.
+
+**Regions**: When a file contains inline test code (Rust `#[cfg(test)]`, Python `class Test*`), eigenhelm shows a breakdown:
+
+```
+  regions:
+    production (lines 1-80):  0.55 (p55)
+    test (lines 81-270):      0.82 (p8)
+```
+
+This helps you see whether a bad score comes from production code or repetitive test patterns. See [Test code dilution](../concepts/dimensions.md#test-code-dilution) for details.
 
 ## Output formats
 

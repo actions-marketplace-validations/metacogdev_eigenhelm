@@ -148,11 +148,14 @@ curl -X POST http://localhost:8080/v1/evaluate/batch \
 | Status | Body | Cause |
 |--------|------|-------|
 | 422 | `{"error": "validation_error", "detail": [...]}` | Invalid request body |
-| 413 | `{"error": "request_too_large", "detail": "..."}` | Source exceeds size limit |
+| 413 | `{"error": "request_too_large", "detail": "..."}` | Source exceeds size limit (1 MB per file, 10 MB per request) |
+| 504 | `{"error": "evaluation_timeout", "detail": "..."}` | Evaluation exceeded 30s timeout |
 
 ## Docker
 
 ```bash
 docker build -t eigenhelm .
-docker run -p 8080:8080 eigenhelm serve --host 0.0.0.0 --port 8080
+docker run -p 8080:8080 eigenhelm
 ```
+
+The image entrypoint is `eigenhelm-serve` with default flags `--host 0.0.0.0 --port 8080`.

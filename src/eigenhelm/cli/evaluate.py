@@ -149,6 +149,23 @@ def format_result_human(
 
     lines.append(f"  confidence: {response.structural_confidence}")
 
+    # 020: Declaration-heavy tag
+    if response.declaration_ratio is not None:
+        lines.append("  [declaration-heavy]")
+
+    # 019: Region breakdown (production vs test)
+    if response.regions:
+        lines.append("  regions:")
+        for region in response.regions:
+            label = region.label.value
+            # Format spans as line ranges
+            if len(region.spans) == 1:
+                span_str = f"lines {region.spans[0].start_line}-{region.spans[0].end_line}"
+            else:
+                span_str = f"{region.total_lines} lines"
+            pct_str = f"p{round(region.percentile)}" if region.percentile is not None else "n/a"
+            lines.append(f"    {label} ({span_str}):  {region.score:.2f} ({pct_str})")
+
     # Per-dimension contribution breakdown (016)
     if response.contributions:
         lines.append("  contributions:")
@@ -343,6 +360,7 @@ def _evaluate_stdin(
         source=source, language=language,
         top_n=top_n, directive_threshold=directive_threshold,
     ))
+    resp = _attach_regions(resp, source, language, helm)
     return [("<stdin>", resp)]
 
 
@@ -357,11 +375,21 @@ def _evaluate_paths(
     language_overrides = config.language_overrides if config else {}
     files = discover_files(paths, language_overrides)
     results: list[tuple[Path | str, EvaluationResponse]] = []
+    from eigenhelm.declarations import analyze_declarations
+    from eigenhelm.declarations.barrel import is_barrel_file
+
     for path, lang in files:
         try:
             source = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             print(f"WARNING: Skipping binary file {path}", file=sys.stderr)
+            continue
+        if is_barrel_file(source, lang):
+            continue
+        # Skip pure type-definition files (dataclasses, interfaces, structs)
+        # — WL hash signal is syntax noise, not a design smell
+        decl = analyze_declarations(source, lang)
+        if decl.is_pure_types:
             continue
         resp = helm.evaluate(EvaluationRequest(
             source=source, language=lang, file_path=str(path),
@@ -370,6 +398,8 @@ def _evaluate_paths(
         if config is not None:
             thresholds = config.thresholds_for(str(path))
             resp = _apply_thresholds(resp, thresholds)
+        # 019: Attach region decomposition if test code detected
+        resp = _attach_regions(resp, source, lang, helm)
         results.append((path, resp))
     return results
 
@@ -391,6 +421,38 @@ def _evaluate_diff_paths(
         helm, changed, config=config,
         top_n=top_n, directive_threshold=directive_threshold,
     )
+
+
+def _attach_regions(
+    resp: EvaluationResponse,
+    source: str,
+    language: str,
+    helm: DynamicHelm,
+) -> EvaluationResponse:
+    """Attach region decomposition to an evaluation response.
+
+    Detects test boundaries, derives spans, scores each region, and returns
+    a new response with regions attached. Returns the original response
+    unchanged if no test code is detected.
+    """
+    from dataclasses import replace
+
+    from eigenhelm.regions import derive_spans, detect_test_boundaries
+
+    boundaries = detect_test_boundaries(source, language)
+    if not boundaries:
+        return resp
+
+    total_lines = len(source.splitlines())
+    spans = derive_spans(boundaries, total_lines)
+    if not spans:
+        return resp
+
+    regions = helm.score_regions(source, language, spans)
+    if not regions:
+        return resp
+
+    return replace(resp, regions=regions)
 
 
 def _get_tool_version() -> str:

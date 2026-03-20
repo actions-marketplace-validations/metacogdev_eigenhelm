@@ -5,7 +5,8 @@ eigenhelm is available as a GitHub Action for CI integration.
 ## Basic usage
 
 ```yaml
-- uses: metacogdev/eigenhelm@v0.3
+- uses: actions/checkout@v4
+- uses: metacogdev/eigenhelm@v0
   with:
     paths: "src/"
 ```
@@ -26,7 +27,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: metacogdev/eigenhelm@v0.3
+      - uses: metacogdev/eigenhelm@v0
         with:
           diff: origin/main...HEAD
 ```
@@ -36,7 +37,7 @@ jobs:
 Fail the check if any file scores marginal or worse:
 
 ```yaml
-- uses: metacogdev/eigenhelm@v0.3
+- uses: metacogdev/eigenhelm@v0
   with:
     diff: origin/main...HEAD
     strict: "true"
@@ -47,7 +48,7 @@ Fail the check if any file scores marginal or worse:
 Send results to GitHub Code Scanning:
 
 ```yaml
-- uses: metacogdev/eigenhelm@v0.3
+- uses: metacogdev/eigenhelm@v0
   with:
     diff: origin/main...HEAD
     sarif-upload: "true"

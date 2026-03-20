@@ -57,6 +57,7 @@ def compute_attribution(
     file_path: str | None = None,
     top_n: int = 3,
     directive_threshold: float = 0.3,
+    declaration_dominant: bool = False,
 ) -> AttributionResult:
     """Compute full attribution for an evaluation result.
 
@@ -124,6 +125,7 @@ def compute_attribution(
         dims_tuple,
         threshold=directive_threshold,
         source_line_count=source_line_count,
+        declaration_dominant=declaration_dominant,
     )
 
     return AttributionResult(

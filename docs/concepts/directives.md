@@ -39,7 +39,7 @@ Directives are actionable improvement suggestions generated from score attributi
 
 | Category | Dimension | What to do |
 |----------|-----------|------------|
-| `review_token_distribution` | Token entropy | Code is too repetitive or too noisy — review information density |
+| `review_token_distribution` | Token entropy | Code is too repetitive (low entropy) — look for duplicated blocks or boilerplate |
 | `improve_compression` | Compression structure | Significant structural redundancy — look for repeated patterns |
 | `review_structure` | NCD exemplar distance | Code is structurally unlike any known good exemplar |
 
@@ -48,6 +48,9 @@ Directives are actionable improvement suggestions generated from score attributi
 **For humans**: Focus on `[high]` severity items. They point to the most impactful improvements.
 
 **For AI agents**: Follow the [iteration protocol](../integrations/agent-skills.md) — address `[high]` directives, re-evaluate, stop after 2-3 attempts or when the score plateaus.
+
+!!! tip "High scores on files with inline tests?"
+    If a file contains both production and test code, high-severity directives like `improve_compression` or `review_structure` may be driven by repetitive test patterns rather than production code quality issues. Check the **region breakdown** in the output — if the production region scores well but the test region scores poorly, the directives are likely test-driven. See [Test code dilution](dimensions.md#test-code-dilution) for details.
 
 ## Controlling directives
 

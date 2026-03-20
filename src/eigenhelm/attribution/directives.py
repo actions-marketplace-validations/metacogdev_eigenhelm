@@ -66,6 +66,7 @@ def generate_directives(
     dimensions: tuple[DimensionAttribution, ...],
     threshold: float = 0.3,
     source_line_count: int | None = None,
+    declaration_dominant: bool = False,
 ) -> tuple[Directive, ...]:
     """Generate directive records from dimension attributions.
 
@@ -81,6 +82,8 @@ def generate_directives(
             (compression_structure, ncd_exemplar_distance) have their
             severity capped at "medium" to avoid misleading agents into
             futile refactoring loops.
+        declaration_dominant: When True, WL-hash-driven PCA directives
+            use "review_structure" instead of "extract_repeated_logic".
 
     Returns:
         Tuple of Directive records (may be empty).
@@ -100,6 +103,9 @@ def generate_directives(
 
         if dim.features:
             category = _category_for_pca_dim(dim)
+            # 020: Override extract_repeated_logic for declaration-dominant files
+            if declaration_dominant and category == "extract_repeated_logic":
+                category = "review_structure"
         else:
             category = _category_for_direct_dim(dim)
 

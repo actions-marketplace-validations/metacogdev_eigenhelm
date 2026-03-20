@@ -62,4 +62,5 @@ eh evaluate src/ --rank --bottom-pct 10
 |------|---------|
 | 0 | All files accepted (or marginal in lenient mode) |
 | 1 | At least one file marginal (default mode) |
-| 2 | At least one file rejected |
+| 2 | At least one file rejected (or marginal in strict mode) |
+| 3 | Runtime or configuration error |

@@ -24,8 +24,8 @@ Settings are resolved in priority order:
 
 # Global accept/reject thresholds
 [thresholds]
-accept = 0.4
-reject = 0.6
+accept = 0.3
+reject = 0.7
 
 # Treat all "warn" decisions as "reject" (useful for strict CI)
 # strict = false
@@ -74,4 +74,4 @@ eh evaluate src/ --strict
 eh evaluate src/ --lenient
 ```
 
-In CI, `--strict` is recommended to prevent marginal code from merging.
+In CI, `--strict` is recommended to prevent marginal code from merging. Note: `--strict` maps marginal to exit code 2 (same as reject), not exit code 1.
