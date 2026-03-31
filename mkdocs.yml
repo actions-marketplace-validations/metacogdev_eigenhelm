@@ -76,6 +76,7 @@ nav:
       - Quick Start: getting-started/quickstart.md
       - Configuration: getting-started/configuration.md
   - Concepts:
+      - Why eigenhelm: concepts/why-eigenhelm.md
       - How It Works: concepts/how-it-works.md
       - Scoring Dimensions: concepts/dimensions.md
       - Directives: concepts/directives.md
@@ -94,5 +95,8 @@ nav:
       - Pre-commit Hook: integrations/pre-commit.md
       - HTTP API: integrations/http-api.md
       - AI Agent Skills: integrations/agent-skills.md
+  - Case Studies:
+      - FastAPI Template: case-studies/fastapi-template.md
+      - Echo Framework: case-studies/echo-framework.md
   - Contributing: contributing.md
   - License: license.md

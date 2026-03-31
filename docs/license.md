@@ -6,4 +6,4 @@ eigenhelm is licensed under the [GNU Affero General Public License v3.0](https:/
 
 Using eigenhelm in a proprietary SaaS or enterprise product without AGPL-3.0 obligations? A commercial license is available.
 
-Contact **licensing@eigenhelm.dev** to discuss terms.
+Contact **licensing@eigenhelm.sh** to discuss terms.

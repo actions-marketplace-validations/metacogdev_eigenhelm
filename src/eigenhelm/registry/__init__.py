@@ -35,7 +35,7 @@ __all__ = [
 
 # Default registry URL — points to a JSON manifest hosted on GitHub
 _DEFAULT_REGISTRY_URL = (
-    "https://raw.githubusercontent.com/metacogdev/eigenhelm/main/registry.json"
+    "https://raw.githubusercontent.com/metacogdev/eigenhelm-models/main/registry.json"
 )
 
 # Local cache directory for downloaded models

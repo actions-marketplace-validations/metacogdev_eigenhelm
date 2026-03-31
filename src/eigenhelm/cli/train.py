@@ -133,9 +133,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument(
         "--corpus-class",
         default="A",
-        choices=["A", "B"],
+        choices=["A", "B", "C"],
         metavar="CLASS",
-        help="Corpus class: A (single-language) or B (cross-language pattern) (default: A)",
+        help="Corpus class: A (single-language), B (cross-language pattern), or C (polyglot) (default: A)",
     )
     parser.add_argument(
         "--force",

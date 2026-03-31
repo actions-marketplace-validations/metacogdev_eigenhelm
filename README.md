@@ -1,18 +1,51 @@
 # eigenhelm
 
-**A conscience for agents, not an agent** — language-agnostic code aesthetic evaluation sidecar.
-
-Eigenhelm scores agent-generated code against mathematical aesthetic metrics derived from
-information theory, complexity science, and a PCA eigenspace trained on curated elite
-corpora. It runs alongside code-generating agents as a real-time quality signal.
+**Catch low-quality AI-generated code before it lands.**
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
 ---
 
-## Quick Start
+## The problem
 
-### Install
+AI agents write working code fast. But "working" isn't "good." Tests pass, the diff looks plausible, and it gets merged — but complexity concentrates in the wrong places, patterns repeat where they should be abstracted, and structure decays toward GitHub average.
+
+LLM reviewers help, but they share the agent's blind spots. They reason from text, not structure. Run the same review twice, get different comments.
+
+The argument against caring: it works, tests pass, ship it. But structural quality isn't aesthetics — it predicts what happens next. High cyclomatic density and concentrated complexity produce more post-merge defects. Agents generate code at machine speed; without measurement, you accumulate structural debt just as fast. And review doesn't scale to agent output volume — the human eye glazes over at 500 lines.
+
+eigenhelm measures code structure using information theory — not an LLM. It parses the AST, extracts a structural fingerprint, and scores how closely the code resembles curated high-quality corpora. Deterministic, trainable on your code, zero API cost.
+
+---
+
+## Before and after
+
+An agent writes a module. eigenhelm evaluates it:
+
+```
+src/pipeline.py
+  decision: reject
+  score:    0.72
+  directives:
+    [high] reduce_complexity → process_batch (lines 15-89)
+    [high] extract_repeated_logic → validate_row (lines 42-67)
+```
+
+The agent reads the directives, refactors, tests still pass. Re-evaluate:
+
+```
+src/pipeline.py
+  decision: accept
+  score:    0.35
+```
+
+0.72 → 0.35. Structurally sound. No human reviewed it.
+
+In controlled benchmarks, agents using eigenhelm produced code rated **46% higher** on design, robustness, and spec compliance — with zero correctness regressions.
+
+---
+
+## Install
 
 ```bash
 pip install eigenhelm
@@ -24,47 +57,45 @@ Or with uv (no venv required):
 uv tool install eigenhelm
 ```
 
-### Evaluate a file
-
 A bundled model is included — no setup needed.
 
 ```bash
 eh evaluate path/to/file.py --classify
 ```
 
-### Evaluate a directory
-
-```bash
-eh evaluate src/ --rank
-```
-
-Ranks all files best-to-worst and highlights the bottom performers.
-
 ### What the scores mean
 
 - **accept** (score < 0.4): Structurally sound. Move on.
-- **marginal** (score 0.4-0.6): Fine. No action needed.
+- **marginal** (score 0.4-0.6): Acceptable; review directives if improvement is straightforward.
 - **reject** (score > 0.6): Worth reviewing. Read the directives for guidance.
 
-Scores are relative to elite open-source training corpora. Most production code scores marginal or reject — that's normal, not a problem.
+Scores are relative to elite open-source training corpora. Most production code scores marginal — that's normal, not a problem.
 
 ---
 
-## Agent Integration
+## How is this different from CodeRabbit?
 
-Eigenhelm ships with a skill file that teaches AI agents how to use it correctly.
+| | eigenhelm | LLM reviewer |
+|---|---|---|
+| **Input** | AST structure (69-dim vector) | Source text |
+| **Deterministic** | Yes — same code, same score | No |
+| **Trainable on your corpus** | Yes — `eh train` | No |
+| **Hard CI gate** | Yes — exit codes, strict mode | Suggestions only |
+| **Tracks quality over time** | Yes — comparable scores | No stable metric |
+| **Catches logic bugs** | No | Yes |
+| **Cost** | Zero (local) | Per-token LLM cost |
+
+They're complementary. eigenhelm runs first — in the agent's inner loop. LLM review runs second, on the PR. [Full comparison.](https://eigenhelm.sh/concepts/why-eigenhelm/)
+
+---
+
+## Agent integration
 
 ```bash
-# Install via skills registry (recommended)
-npx skills add metacogdev/skills
-
-# Or install directly from eigenhelm CLI
 eh skill --install
 ```
 
-The skill encodes a tested workflow contract: evaluate after tests pass, two passes maximum, never sacrifice correctness for score. In controlled benchmarks across 3 project types, agents using the skill produced code rated 46% higher on design, robustness, and spec compliance by an independent reviewer, with no correctness regressions.
-
-[Full agent integration guide](https://eigenhelm.sh/integrations/agent-skills/)
+The skill teaches AI agents the correct workflow: evaluate after tests pass, two passes maximum, never sacrifice correctness for score. In a controlled benchmark (3 scenarios, scored by a separate reviewer not involved in generation), agents using the skill produced code rated 46% higher on quality metrics. [Full guide.](https://eigenhelm.sh/integrations/agent-skills/)
 
 ---
 
@@ -79,9 +110,12 @@ All commands are available as `eigenhelm <command>` or `eh <command>`:
 | `eh inspect` | Inspect a saved model's metadata |
 | `eh serve` | Run the evaluation HTTP server |
 | `eh harness` | Run a statistical comparison harness across two code sets |
+| `eh benchmark` | Run real-world use case benchmarks |
 | `eh skill` | Install the agent skill file |
+| `eh model` | Manage eigenhelm models (list, pull, info) |
 | `eh init` | Generate a starter `.eigenhelm.toml` configuration |
 | `eh corpus` | Manage training corpora (sync from manifest) |
+| `eh mcp` | Start the MCP stdio server |
 
 Run `eh --help` or `eh <command> --help` for details.
 
@@ -92,8 +126,9 @@ Run `eh --help` or `eh <command> --help` for details.
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Liveness probe |
-| `/evaluate` | POST | Evaluate a code unit |
-| `/evaluate/batch` | POST | Evaluate multiple code units |
+| `/ready` | GET | Readiness probe (model loaded) |
+| `/v1/evaluate` | POST | Evaluate a code unit |
+| `/v1/evaluate/batch` | POST | Evaluate multiple code units |
 
 ---
 
@@ -133,7 +168,11 @@ eigenhelm/
 ├── output/               — SARIF 2.1.0 and JSON formatters
 ├── scoring/              — Per-repo scorecard (M1-M5, Q1-Q5)
 ├── harness/              — Statistical evaluation harness (Mann-Whitney U)
-└── serve/                — FastAPI HTTP evaluation server
+├── parsers/              — Language parsing (tree-sitter integration)
+├── mcp/                  — Model Context Protocol stdio server
+├── registry/             — Model registry and resolution
+├── trained_models/       — Bundled .npz models
+└── serve/                — HTTP evaluation server (requires `eigenhelm[serve]` extra)
 ```
 
 ---

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.0](https://github.com/matchdav/eigenhelm/compare/v0.7.0...v0.8.0) (2026-03-31)
+
+
+### Features
+
+* add case study for FastAPI full-stack template and update navigation ([951a956](https://github.com/matchdav/eigenhelm/commit/951a956ed669f18e9fcbece03eaa7e2dc19ae7d6))
+* enhance training workflow to support polyglot corpus and update manifest detection ([3fa6b4d](https://github.com/matchdav/eigenhelm/commit/3fa6b4d424bf190f1cb06e9b7acb298fe4eb1303))
+* implement training and publishing workflow for models ([76b769d](https://github.com/matchdav/eigenhelm/commit/76b769d75a130c6c621a21dac18b92f001b8420f))
+
+
+### Documentation
+
+* add recommendations for strengthening eigenhelm's case studies and narrative ([ff6f20c](https://github.com/matchdav/eigenhelm/commit/ff6f20c94653f4187323470acd2795ad332a76ea))
+* elevator pitch ([b7b3744](https://github.com/matchdav/eigenhelm/commit/b7b37448f51ec067646c017055c6b334076c5407))
+* fix stale stuff ([ce70fe2](https://github.com/matchdav/eigenhelm/commit/ce70fe2a634c2fea7afdffc83b79edbc83dafb87))
+* tighten the case study with reproducibility anchors ([0dd1679](https://github.com/matchdav/eigenhelm/commit/0dd16796104988c073da4a36876c2a7b47314d36))
+* update FastAPI case study with additional model training details and clarify evaluation results ([f5d1151](https://github.com/matchdav/eigenhelm/commit/f5d11515fe4cd8cf9f0235576eeae987bbd4ca32))
+* update README and case studies with new findings and improved clarity ([92fc1c6](https://github.com/matchdav/eigenhelm/commit/92fc1c6d07c6206d7e08676d9b0224ea9ab9dd7f))
+* update README and why-eigenhelm to clarify eigenhelm's structural quality focus and benefits ([3f29578](https://github.com/matchdav/eigenhelm/commit/3f29578b405294b980eb4ae8ed5ba4ff8bd0e9cf))
+
 ## [0.7.0](https://github.com/matchdav/eigenhelm/compare/v0.6.0...v0.7.0) (2026-03-24)
 
 
