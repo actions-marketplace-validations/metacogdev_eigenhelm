@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.10.2](https://github.com/matchdav/eigenhelm/compare/v0.10.1...v0.10.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **action:** accept (don't crash) when no evaluable files are in the range ([#71](https://github.com/matchdav/eigenhelm/issues/71)) ([f8b4b32](https://github.com/matchdav/eigenhelm/commit/f8b4b32af396bc98dfd230fff5d90686d4c9873e))
+* **action:** treat warn/reject as quality decisions, not crashes ([#66](https://github.com/matchdav/eigenhelm/issues/66)) ([#69](https://github.com/matchdav/eigenhelm/issues/69)) ([ebfd9c6](https://github.com/matchdav/eigenhelm/commit/ebfd9c64f175ed9ed96d2d9a0d264ea5bd43544d))
+
+## [0.10.1](https://github.com/matchdav/eigenhelm/compare/v0.10.0...v0.10.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* bind exemplar bytes and identity to close concurrency hazard ([#62](https://github.com/matchdav/eigenhelm/issues/62)) ([#64](https://github.com/matchdav/eigenhelm/issues/64)) ([4e61af5](https://github.com/matchdav/eigenhelm/commit/4e61af547b83b03ca38102df4c5c87d5cb040801))
+* remove .squad references ([8910ec7](https://github.com/matchdav/eigenhelm/commit/8910ec7380c5be9fd98fbe013bdcde36648460bd))
+* stop the squad ([2867e82](https://github.com/matchdav/eigenhelm/commit/2867e82c27748236dabea4e01d6a3abf1ec02051))
+* stop the squad, part 2 ([18439f2](https://github.com/matchdav/eigenhelm/commit/18439f2e6346cd02d0b93e57e67a80e5afbaa2b4))
+* update action.yml for improved version handling and error reporting ([7c5c4c6](https://github.com/matchdav/eigenhelm/commit/7c5c4c6d8fced0f3fa293287231be8be9fcfa3cf))
+
+## [0.10.0](https://github.com/matchdav/eigenhelm/compare/v0.9.0...v0.10.0) (2026-04-28)
+
+
+### Features
+
+* GitHub Action — composite action, auto-diff, SARIF, fail-on policy ([#59](https://github.com/matchdav/eigenhelm/issues/59)) ([75c1ece](https://github.com/matchdav/eigenhelm/commit/75c1ece892f71c81269af1d093a31647e8ca23a4))
+* publish Docker image to GHCR on release ([#53](https://github.com/matchdav/eigenhelm/issues/53)) ([2eea564](https://github.com/matchdav/eigenhelm/commit/2eea564e0c93de49f1698e6490fc0362a3a8363f))
+* test coverage initiative — 82% to 95% (1219 → 1750 tests) ([9eedaa4](https://github.com/matchdav/eigenhelm/commit/9eedaa4b4af3136fa471f6715c57b72056b55a0d))
+
+
+### Bug Fixes
+
+* lint cleanup and test file rename after coverage merge ([94b00c8](https://github.com/matchdav/eigenhelm/commit/94b00c8d8433c659dc7c12ced442dbf09a796c40))
+
+
+### Documentation
+
+* add model registry references throughout ([399ba00](https://github.com/matchdav/eigenhelm/commit/399ba0068e5e85eb5a9f1fb92242639eff4d6847))
+* fix context rot in action version and architecture map ([#63](https://github.com/matchdav/eigenhelm/issues/63)) ([c615ef8](https://github.com/matchdav/eigenhelm/commit/c615ef8171288c58ba8ed62c618633273fc175f3))
+* update models/README.md schema and add GitHub Action section to public README ([387efac](https://github.com/matchdav/eigenhelm/commit/387efacb9e4334b2616e8b0280ffa4fc8e5687cb))
+
 ## [0.9.0](https://github.com/matchdav/eigenhelm/compare/v0.8.0...v0.9.0) (2026-04-02)
 
 
